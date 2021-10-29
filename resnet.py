@@ -54,7 +54,8 @@ for i, image in enumerate(inmeyok_images):
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 
-#%%
+#%% Train Test Kümesini Ayırma
+
 def load_split_train_test(datadir, valid_size = .2):
     
     train_transforms = transforms.Compose([transforms.RandomRotation(30),
@@ -98,13 +99,10 @@ trainloader, testloader = load_split_train_test(data_dir, .2)
 print(trainloader.dataset.classes)
 ['InmeVar', 'InmeYok']
 
-#%%
+#%% Model Kurma
 
 model = models.resnet50(pretrained=True)
 print(model)
-
-
-#%%
 
 for param in model.parameters():
     param.requires_grad = False
@@ -115,11 +113,11 @@ model.fc = nn.Sequential(nn.Linear(2048, 512),
                                  nn.Linear(512, 2),
                                  nn.LogSoftmax(dim=1))
 criterion = nn.NLLLoss()
-optimizer = optim.SGD(model.fc.parameters(), lr=0.001)
+optimizer = optim.Adam(model.fc.parameters(), lr=0.003)
 model.to(device)
+#%% Train İşlemi
 
-#%%
-epochs = 3
+epochs = 10
 steps = 0
 running_loss = 0
 print_every = 10
@@ -158,18 +156,12 @@ for epoch in range(epochs):
                   f"Test accuracy: {accuracy/len(testloader):.3f}")
             running_loss = 0
             model.train()
-torch.save(model, 'covidlmodel.pth')
+torch.save(model, 'inme.pth')
 
 
-
-#%%
+#%% Görselleştirme
 
 plt.plot(train_losses, label='Training loss')
 plt.plot(test_losses, label='Validation loss')
 plt.legend(frameon=False)
 plt.show()
-
-
-#%%
-
-
