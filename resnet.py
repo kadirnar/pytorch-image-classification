@@ -3,7 +3,7 @@
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.model_selection import train_test_split
 from PIL import Image
-import torchvision
+import torchvision 
 import torch.nn as nn
 import cv2
 from tqdm import tqdm
@@ -107,17 +107,20 @@ print(model)
 for param in model.parameters():
     param.requires_grad = False
     
-model.fc = nn.Sequential(nn.Linear(2048, 512),
+model.fc = nn.Sequential(nn.Linear(2048, 1024),
                                  nn.ReLU(),
                                  nn.Dropout(0.2),
-                                 nn.Linear(512, 2),
+                                 nn.Linear(1024, 224),
+                                 nn.ReLU(),
+                                 nn.Dropout(0.2),
+                                 nn.Linear(224, 2),                     
                                  nn.LogSoftmax(dim=1))
 criterion = nn.NLLLoss()
-optimizer = optim.Adam(model.fc.parameters(), lr=0.003)
+optimizer = optim.SGD(model.fc.parameters(), lr=0.01)
 model.to(device)
 #%% Train İşlemi
 
-epochs = 10
+epochs = 50
 steps = 0
 running_loss = 0
 print_every = 10
@@ -156,7 +159,8 @@ for epoch in range(epochs):
                   f"Test accuracy: {accuracy/len(testloader):.3f}")
             running_loss = 0
             model.train()
-torch.save(model, 'inme.pth')
+torch.save(model, 'inme3.pth')
+
 
 
 #%% Görselleştirme
@@ -165,3 +169,51 @@ plt.plot(train_losses, label='Training loss')
 plt.plot(test_losses, label='Validation loss')
 plt.legend(frameon=False)
 plt.show()
+
+
+#%% Sonuçları Gösterme
+
+import numpy as np
+import helper
+
+model.to('cpu')
+model.eval()
+
+data_iter = iter(testloader)
+images, labels = next(data_iter)
+fig, axes = plt.subplots(figsize=(10,10), ncols=4)
+
+for ii in range(4):
+    ax = axes[ii]
+    helper.imshow(images[ii], ax=ax, normalize=False)
+#%%
+with torch.no_grad():
+    output = model(images)
+ps = torch.exp(output) # network is too large and slow
+
+random_img = np.random.randint(64, size=1)[0]
+random_img
+
+probability = ps[random_img].data.numpy().squeeze()
+print(probability)
+#%%
+resim = "C:/Users/kadir/Desktop/kadirnar/pytorch/inmeler/train/inmevar/10002.png"
+helper.imshow(images[5], normalize=False)
+
+#%%
+ind = np.arange(2)
+labels = ['İnmeVAR', 'İnmeYOK',]
+width = 0.35
+locations = ind
+
+class_probability = plt.barh(ind, probability, width, alpha=.7, label='İnmeVAR vs İnmeYOK')
+
+plt.yticks(np.arange(10))
+plt.title('Class Probability')
+plt.yticks(locations, labels)
+
+#legend
+plt.legend()
+plt.ylim(top=3)
+plt.ylim(bottom=-2)
+plt.show();
