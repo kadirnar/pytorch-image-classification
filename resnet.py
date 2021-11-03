@@ -101,7 +101,7 @@ print(trainloader.dataset.classes)
 
 #%% Model Kurma
 
-model = models.resnet50(pretrained=True)
+model = models.resnet50(pretrained=True) # Model indirme için conda install -c anaconda ipywidgets kütüphanesini yükleyiniz.
 print(model)
 
 for param in model.parameters():
