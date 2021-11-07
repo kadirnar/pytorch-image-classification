@@ -77,11 +77,19 @@ print(model)
 
 # FC Katmanı
 
+model = models.efficientnet.efficientnet_b2(pretrained=True)
+for param in model.parameters():
+    param.requires_grad = False
+print(model)
+
+
 classifier = nn.Sequential(OrderedDict([
-    ('fc1', nn.Linear(1792, 1024)),
-    ('relu', nn.ReLU()),
-    ('dropout', nn.Dropout(p=0.2)),
-    ('fc2', nn.Linear(1024, 2)),
+    ('fc1', nn.Linear(1408, 512)),
+    ('relu', nn.LeakyReLU()),
+    ('Lazy_norm', nn.LazyBatchNorm1d(512)),
+    ('fsec1', nn.Flatten()),
+    ('fc2', nn.Linear(512, 2)),
+    
     ('output', nn.LogSoftmax(dim=1))
 ]))
 
