@@ -1,4 +1,5 @@
-# image classification import pytorch library
+# Kütüphanelerin Yüklenmesi
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -18,9 +19,8 @@ from torch.utils.data import SubsetRandomSampler
 
 #%%
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-torch.cuda.empty_cache()
-#%%
-# train and test data split ratio
+
+# Veri setinin train ve test olarak ayırma
 
 datadir = "dataset/"  
 
@@ -66,7 +66,7 @@ def load_split_train_test(datadir, valid_size = .2):
 trainloader, validloader = load_split_train_test(datadir, .2)
 print(trainloader.dataset.classes)
 
-#%%
+# Efficientnet modelini kurma
 
 # efficientnet model 
 model = models.efficientnet.efficientnet_b7(pretrained=True)
@@ -75,6 +75,7 @@ for param in model.parameters():
 
 print(model)
 
+# FC Katmanı
 
 classifier = nn.Sequential(OrderedDict([
     ('fc1', nn.Linear(1792, 1024)),
@@ -87,13 +88,14 @@ classifier = nn.Sequential(OrderedDict([
 model.classifier = classifier
 model.to(device)
 
-# optimizer
+# Optimizer
 criterion = nn.NLLLoss()
 optimizer = optim.Adam(model.classifier.parameters(), lr=0.01)
 
-#%%
 
-# validation
+
+# Validation
+
 def validation(model, criterion, validloader):
     valid_loss = 0
     accuracy = 0
@@ -107,9 +109,9 @@ def validation(model, criterion, validloader):
         accuracy += (predicted == labels).sum().item()
     return valid_loss, accuracy
 
-#%%
 
-# train model
+# Modeli Eğitme
+
 def train_model(model, criterion, optimizer, epochs=50, print_every=40, steps=0, trainloader=trainloader, validloader=validloader):
     start = time.time()
     steps = 0
@@ -141,29 +143,3 @@ def train_model(model, criterion, optimizer, epochs=50, print_every=40, steps=0,
     print("Training time: {:.3f}".format(end-start))
     return model
 train_model(model, criterion, optimizer, epochs=50, print_every=40, steps=0, trainloader=trainloader, validloader=validloader)
-#%%
-
-def test_model(model, validloader, gpu=True):
-    if gpu and torch.cuda.is_available():
-        model.cuda()
-    else:
-        model.cpu()
-    model.eval()
-    test_loss = 0
-    accuracy = 0
-    for inputs, labels in validloader:
-        if gpu and torch.cuda.is_available():
-            inputs, labels = Variable(inputs.cuda()), Variable(labels.cuda())
-        else:
-            inputs, labels = Variable(inputs), Variable(labels)
-        logps = model.forward(inputs)
-        batch_loss = criterion(logps, labels)
-        test_loss += batch_loss.item()
-        ps = torch.exp(logps)
-        top_p, top_class = ps.topk(1, dim=1)
-        equals = top_class == labels.view(*top_class.shape)
-        accuracy += torch.mean(equals.type(torch.FloatTensor)).item()
-    print(f"Test loss: {test_loss/len(validloader):.3f}.. "
-          f"Test accuracy: {accuracy/len(validloader):.3f}")
-test_model(model, validloader)  
-#%%
