@@ -17,9 +17,6 @@ from collections import OrderedDict
 import os
 from torch.utils.data import SubsetRandomSampler
 
-#%%
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 # Veri setinin train ve test olarak ayırma
 
 datadir = "dataset/"  
@@ -66,16 +63,7 @@ def load_split_train_test(datadir, valid_size = .2):
 trainloader, validloader = load_split_train_test(datadir, .2)
 print(trainloader.dataset.classes)
 
-# Efficientnet modelini kurma
-
-# efficientnet model 
-model = models.efficientnet.efficientnet_b7(pretrained=True)
-for param in model.parameters():
-    param.requires_grad = False
-
-print(model)
-
-# FC Katmanı
+# Model Kurma
 
 model = models.efficientnet.efficientnet_b2(pretrained=True)
 for param in model.parameters():
@@ -89,17 +77,20 @@ classifier = nn.Sequential(OrderedDict([
     ('Lazy_norm', nn.LazyBatchNorm1d(512)),
     ('fsec1', nn.Flatten()),
     ('fc2', nn.Linear(512, 2)),
-    
     ('output', nn.LogSoftmax(dim=1))
 ]))
 
 model.classifier = classifier
+
+# Modeli GPU'ya aktarma
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
-# Optimizer
-criterion = nn.NLLLoss()
-optimizer = optim.Adam(model.classifier.parameters(), lr=0.01)
+# optimizer
 
+criterion = nn.NLLLoss()
+optimizer = optim.Adam(model.classifier.parameters(), lr=0.001)
 
 
 # Validation
