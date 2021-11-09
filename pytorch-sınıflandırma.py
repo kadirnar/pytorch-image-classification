@@ -111,34 +111,47 @@ def validation(model, criterion, validloader):
 
 # Modeli Eğitme
 
-def train_model(model, criterion, optimizer, epochs=50, print_every=40, steps=0, trainloader=trainloader, validloader=validloader):
-    start = time.time()
-    steps = 0
-    running_loss = 0
-    print_every = 40
-    for e in range(epochs):
-        model.train()
-        for ii, (inputs, labels) in enumerate(trainloader):
-            steps += 1
-            inputs, labels = inputs.to(device), labels.to(device)
-            optimizer.zero_grad()
-            outputs = model.forward(inputs.to(device))
-            loss = criterion(outputs, labels.to(device))
-            loss.backward()
-            optimizer.step()
-            running_loss += loss.item()
-            
-            if steps % print_every == 0:
-                model.eval()
-                with torch.no_grad():
-                    valid_loss, accuracy = validation(model, criterion, validloader)
-                print("Epoch: {}/{}.. ".format(e+1, epochs),
-                      "Training Loss: {:.3f}.. ".format(running_loss/print_every),
-                      "Validation Loss: {:.3f}.. ".format(valid_loss/len(validloader)),
-                      "Validation Accuracy: {:.3f}".format(accuracy/len(validloader)))
-                running_loss = 0
-                model.train()
-    end = time.time()
-    print("Training time: {:.3f}".format(end-start))
-    return model
-train_model(model, criterion, optimizer, epochs=50, print_every=40, steps=0, trainloader=trainloader, validloader=validloader)
+epochs = 5
+steps = 0
+running_loss = 0
+print_every = 5
+for epoch in range(epochs):
+    for inputs, labels in trainloader:
+        steps += 1
+        # Move input and label tensors to the default device
+        inputs, labels = inputs.to(device), labels.to(device)
+        
+        optimizer.zero_grad()
+        
+        logps = model.forward(inputs)
+        loss = criterion(logps, labels)
+        loss.backward()
+        optimizer.step()
+
+        running_loss += loss.item()
+        
+        if steps % print_every == 0:
+            test_loss = 0
+            accuracy = 0
+            model.eval()
+            with torch.no_grad():
+                for inputs, labels in validloader:
+                    inputs, labels = inputs.to(device), labels.to(device)
+                    logps = model.forward(inputs)
+                    batch_loss = criterion(logps, labels)
+                    
+                    test_loss += batch_loss.item()
+                    
+                    # Calculate accuracy
+                    ps = torch.exp(logps)
+                    top_p, top_class = ps.topk(1, dim=1)
+                    equals = top_class == labels.view(*top_class.shape)
+                    accuracy += torch.mean(equals.type(torch.FloatTensor)).item()
+                    
+            print(f"Epoch {epoch+1}/{epochs}.. "
+                  f"steps {steps+1}/{epoch+1}.. "
+                  f"Train loss: {running_loss/print_every:.3f}.. "
+                  f"Test loss: {test_loss/len(validloader):.3f}.. "
+                  f"Test accuracy: {accuracy/len(validloader):.3f}")
+            running_loss = 0
+            model.train()
