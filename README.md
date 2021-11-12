@@ -7,18 +7,22 @@
 Model eğitimi yapmak için şu adımları uygulayın:
 
 1. Eğitim yapmak istediğiniz resimlerin klasörleri, datasets klasörün içine atın.
+     
+```
+datasets/ 
+    1.Sınıf/
+        img_000.jpg
+        ...
+        img_999.jpg 
+    2.Sınıf/ 
+        img_000.jpg
+        ...
+        img_999.jpg 
+    x.Sınıf/ 
+        img_000.jpg
+        ...
+        img_999.jpg       
+```
 
-datasets/ <br>
-    1.Sınıf/ <br>
-        img_000.jpg
-        ...
-        img_999.jpg  <br>
-    2.Sınıf/ <br>
-        img_000.jpg
-        ...
-        img_999.jpg  <br>
-    x.Sınıf/ <br>
-         img_000.jpg
-        ...
-        img_999.jpg
-        
+
+
