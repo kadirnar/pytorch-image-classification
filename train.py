@@ -20,19 +20,22 @@ from torch.utils.data import SubsetRandomSampler
 # Veri setinin train ve test olarak ayırma
 
 datadir = "dataset/"  
+# Veri setinin train ve test olarak ayırma
 
-def load_split_train_test(datadir, valid_size = .2):
+datadir = "dataset/"  
+
+def load_split_train_test(datadir, valid_size = .3):
     
-    train_transforms = transforms.Compose([transforms.RandomRotation(30),
-                                           transforms.RandomResizedCrop(224),
+    train_transforms = transforms.Compose([transforms.RandomRotation(45),
+                                           transforms.RandomResizedCrop(512),
                                            transforms.RandomHorizontalFlip(p=1),
                                            transforms.ToTensor(),
                                            transforms.Normalize([0.485, 0.456, 0.406],
                                                                 [0.229, 0.224, 0.225])
     ])
     
-    test_transforms = transforms.Compose([transforms.Resize(256),
-                                          transforms.CenterCrop(224),
+    test_transforms = transforms.Compose([transforms.Resize(512),
+                                          transforms.CenterCrop(512),
                                           transforms.ToTensor(),
                                           transforms.Normalize([0.485, 0.456, 0.406],
                                                                [0.229, 0.224, 0.225])
@@ -53,32 +56,30 @@ def load_split_train_test(datadir, valid_size = .2):
     test_sampler = SubsetRandomSampler(test_idx)
     
     trainloader = torch.utils.data.DataLoader(train_data,
-                   sampler=train_sampler, batch_size=128)
+                   sampler=train_sampler, batch_size=64)
     
     validloader = torch.utils.data.DataLoader(test_data,
-                   sampler=test_sampler, batch_size=128)
+                   sampler=test_sampler, batch_size=64)
     
     return trainloader, validloader
-
 trainloader, validloader = load_split_train_test(datadir, .2)
 print(trainloader.dataset.classes)
 
 # Model Kurma
 
-model = models.efficientnet.efficientnet_b2(pretrained=True)
+model = models.densenet201(pretrained=True)
 for param in model.parameters():
     param.requires_grad = False
 print(model)
 
 
 classifier = nn.Sequential(OrderedDict([
-    ('fc1', nn.Linear(1408, 512)),
+    ('fc1', nn.Linear(1920, 512)),
     ('relu', nn.LeakyReLU()),
-    ('Lazy_norm', nn.LazyBatchNorm1d(512)),
-    ('fsec1', nn.Flatten()),
     ('fc2', nn.Linear(512, 2)),
     ('output', nn.LogSoftmax(dim=1))
 ]))
+
 
 model.classifier = classifier
 
@@ -87,31 +88,12 @@ model.classifier = classifier
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
-# optimizer
-
 criterion = nn.NLLLoss()
 optimizer = optim.Adam(model.classifier.parameters(), lr=0.001)
 
-
-# Validation
-
-def validation(model, criterion, validloader):
-    valid_loss = 0
-    accuracy = 0
-    for data in validloader:
-        images, labels = data
-        images, labels = images.to('cuda'), labels.to('cuda')
-        outputs = model(images)
-        loss = criterion(outputs, labels)
-        valid_loss += loss.item()
-        _, predicted = torch.max(outputs.data, 1)
-        accuracy += (predicted == labels).sum().item()
-    return valid_loss, accuracy
-
-
 # Modeli Eğitme
 
-epochs = 5
+epochs = 35
 steps = 0
 running_loss = 0
 print_every = 5
