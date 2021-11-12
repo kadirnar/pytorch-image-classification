@@ -137,3 +137,10 @@ for epoch in range(epochs):
                   f"Test accuracy: {accuracy/len(validloader):.3f}")
             running_loss = 0
             model.train()
+# Model Kaydetme
+
+model_ismi ="model.pth"
+torch.save(model, model_ismi)  
+
+model = torch.load(model_ismi)
+model.eval()
