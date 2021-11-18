@@ -1,4 +1,4 @@
-# Pytorch Kütüphanesini Kullanarak Fotoğraf Sınıflandımra
+# Pytorch Kütüphanesini Kullanarak Fotoğraf Sınıflandırma
 
 <img height="350" src="/readme_images/torch.png"/>
 
